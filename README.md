@@ -30,17 +30,20 @@ same time.
 
 ### producer.php
 
-    <?php
-    $sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
-    $sync->exec(function () {
-        return file_get_contents('/var/log/system.log');
-    });
+```php
+
+<?php
+$sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
+$sync->exec(function () {
+    return file_get_contents('/var/log/system.log');
+});
+
+```
 
 You initialize it with the directory for the "root" as well as a name for your
-repository. The exec method takes a callback that will return the contents
-of the file that you want to store. Every time you run this producer, it will
-fetch the content and write a `state` file and a `latest` file if anything has
-changed.
+repository. The exec method takes a callback that should return whatever you
+want to store. Every time you run this producer, it will fetch the content and
+write a `state` file and a `latest` file if anything has changed.
 
 The producer will likely be run regularly via cron or something like that. It
 could run anywhere from every minute to once a year - pick what makes sense for
@@ -48,18 +51,26 @@ your data.
 
 ### consumer.php
 
-    <?php
-    $sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
-    echo $sync->latest();
+```php
+
+<?php
+$sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
+echo $sync->latest();
+
+```
 
 The consumer is initialized in the same way, but only calls the `latest` method
 to fetch the latest version of the file.
 
-    # Run the update every 5 seconds
-    while [[ true ]]; do php producer.php; sleep 5; done
+```bash
 
-    # In another terminal, fetch the latest version
-    php consumer.php
+# Run the update every 5 seconds
+while [[ true ]]; do php producer.php; sleep 5; done
+
+# In another terminal, fetch the latest version
+php consumer.php
+
+```
 
 ## Todo
 
