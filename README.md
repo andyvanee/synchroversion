@@ -28,16 +28,19 @@ a `state` directory, and the latest few full versions of the file in a `latest`
 directory. The producer and consumer are never accessing the same file at the
 same time.
 
+My initial prototype was written in bash, but this version is in PHP since it's
+what I'm currently working in. Since the format is completely text file based,
+it is language agnostic and should be quite simple to implement in other
+languages as well.
+
 ### producer.php
 
 ```php
-
 <?php
 $sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
 $sync->exec(function () {
     return file_get_contents('/var/log/system.log');
 });
-
 ```
 
 You initialize it with the directory for the "root" as well as a name for your
@@ -52,24 +55,20 @@ your data.
 ### consumer.php
 
 ```php
-
 <?php
 $sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
 echo $sync->latest();
-
 ```
 
 The consumer is initialized in the same way, but only calls the `latest` method
 to fetch the latest version of the file.
 
 ```bash
-
 # Run the update every 5 seconds
 while [[ true ]]; do php producer.php; sleep 5; done
 
 # In another terminal, fetch the latest version
 php consumer.php
-
 ```
 
 ## Todo
