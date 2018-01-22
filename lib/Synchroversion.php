@@ -131,6 +131,9 @@ class Synchroversion {
     }
 
     private function tempFile() {
-        return tempnam($this->directory, $this->name);
+        return tempnam(
+            sprintf('%s/%s', $this->directory, $this->name),
+            $this->name
+        );
     }
 }
