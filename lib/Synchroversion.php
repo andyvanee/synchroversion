@@ -131,6 +131,6 @@ class Synchroversion {
     }
 
     private function tempFile() {
-        return tempnam(sys_get_temp_dir(), $this->name);
+        return tempnam($this->directory, $this->name);
     }
 }
