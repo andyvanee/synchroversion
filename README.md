@@ -76,6 +76,7 @@ are previous versions.
 $sync->exec(function(){
     return 'Hello World!';
 });
+```
 
 ### retainState(int $count)
 
