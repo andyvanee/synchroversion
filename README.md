@@ -33,7 +33,9 @@ what I'm currently working in. Since the format is completely text file based,
 it is language agnostic and should be quite simple to implement in other
 languages as well.
 
-### new Synchroversion($root, $path)
+## Usage
+
+### new Synchroversion\Synchroversion($root, $path)
 
 Create a new instance, ready for reading or writing. The first argument is the
 root directory where all files are stored and the second is the path within
@@ -44,7 +46,7 @@ just name it `syslog`.
 $sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
 ```
 
-#### Synchroversion::setUmask($umask)
+### setUmask($umask)
 
 This can be used to set the permissions of files and directories created. The
 default umask is `0022`, which means world-readable and user-writeable. You may
@@ -56,22 +58,45 @@ Check out documentation for UNIX `umask` for more examples.
 $sync->setUmask(0007);
 ```
 
-#### Synchroversion::latest()
+### latest()
 
 This returns the latest version of the content that has been stored.
 
-#### Synchroversion::exec(callable $cb)
+```php
+$content = $sync->latest();
+```
+
+### exec(callable $cb)
 
 To write a version of the content, pass a callable which returns the data
 to be stored. A version file will be created as well as a diff if there
 are previous versions.
 
-#### Synchroversion::retainState(int $count)
+```php
+$sync->exec(function(){
+    return 'Hello World!';
+});
+
+### retainState(int $count)
 
 By default, the three latest full versions of the content are kept. This may
-be adjusted by setting this to less or more. State files are cleaned up on
-every call to exec(). If you'd like to clean up files manually by calling
-`$sync->retainState($count)` and then `$sync->purgeStateFiles()`.
+be adjusted by setting this to less or more.
+
+```php
+// Hoard all the versions!
+$sync->retainState(10);
+
+// Save my disk space!
+$sync->retainState(1);
+```
+
+State files are cleaned up on every call to exec(). If you'd like to clean up
+files without calling exec, call `purgeStateFiles()` instead
+
+```php
+$sync->retainState(1);
+$sync->purgeStateFiles()
+```
 
 ## Example files
 
