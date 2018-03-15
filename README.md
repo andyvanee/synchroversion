@@ -35,6 +35,12 @@ languages as well.
 
 ## Usage
 
+Install with composer:
+
+```bash
+composer require andyvanee/synchroversion
+```
+
 ### new Synchroversion\Synchroversion($root, $path)
 
 Create a new instance, ready for reading or writing. The first argument is the
