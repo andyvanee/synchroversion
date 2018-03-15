@@ -81,7 +81,9 @@ $sync->exec(function(){
 ### retainState(int $count)
 
 By default, the three latest full versions of the content are kept. This may
-be adjusted by setting this to less or more.
+be adjusted by setting this to less or more. Note that diffs are kept for the
+entire history, so it is always possible to reconstruct any past state. These
+are simply kept to review consistency.
 
 ```php
 // Hoard all the versions!
@@ -92,7 +94,7 @@ $sync->retainState(1);
 ```
 
 State files are cleaned up on every call to exec(). If you'd like to clean up
-files without calling exec, call `purgeStateFiles()` instead
+state files without calling exec, call `purgeStateFiles()` instead.
 
 ```php
 $sync->retainState(1);
@@ -108,11 +110,15 @@ A producer would likely be run regularly via cron or triggered by some other
 action. It could run anywhere from every minute to once a year - pick what
 makes sense for your data.
 
-```bash
-# Run the update every 5 seconds
-while [[ true ]]; do php producer.php; sleep 5; done
+Run the update every 5 seconds:
 
-# In another terminal, fetch the latest version
+```bash
+while [[ true ]]; do php producer.php; sleep 5; done
+```
+
+In another terminal, fetch the latest version:
+
+```bash
 php consumer.php
 ```
 
