@@ -109,8 +109,29 @@ $sync->purgeStateFiles()
 
 ## Example files
 
-In this directory are two example files `producer.php` and `consumer.php` that
-illustrate both a writer and a reader which track syslog file.
+```php
+<?php
+// producer.php
+require 'vendor/autoload.php';
+
+$sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
+
+$sync->exec(function () {
+    return file_get_contents('/var/log/system.log');
+});
+```
+
+```php
+<?php
+// consumer.php
+require 'vendor/autoload.php';
+
+$sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
+
+echo $sync->latest();
+```
+
+These two files illustrate a writer and a reader which track the syslog file.
 
 A producer would likely be run regularly via cron or triggered by some other
 action. It could run anywhere from every minute to once a year - pick what
