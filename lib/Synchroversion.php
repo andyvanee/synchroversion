@@ -40,32 +40,45 @@ class Synchroversion {
      * @var $content A string or callable that produces the content you want to store
      **/
     public function exec($content) {
+        // #1 - Timestamp the start of execution
+        $timestamp = strftime('%Y%m%d-%H%M%S');
+
+        // #2 - Touch state directory, version directory and latest state file
         $this->touchDir($this->stateDir());
         $this->touchDir($this->versionDir());
-        $timestamp = strftime('%Y%m%d-%H%M%S');
+        touch($this->latestStateFile());
+
+        // #3 - Create temporary files for $current and $diff
         $current = $this->tempFile();
         $diff = $this->tempFile();
 
-        touch($this->latestStateFile());
-
+        // #4 - Place the content in the $current temp file
         if (is_callable($content)) {
             file_put_contents($current, $content());
         } else {
             file_put_contents($current, $content);
         }
 
+        // #5 - Run the diff command and place the result in the $diff temp file
         exec($this->diffCommand($this->latestStateFile(), $current, $diff));
 
         if (filesize($diff) > 0) {
             // TODO: figure out if there is a more transactional way to
             // generate links. An empty or unlinked latest state file would
             // cause a problem for subsequent updates
+
+            // #6 - If a diff exists, timestamp and link new diff
             $this->link($diff, $this->stateFile($timestamp));
+
+            // #7 - If a diff exists, timestamp and link a version
+            $this->link($current, $this->versionFile($timestamp));
+
+            // #8 - If a diff exists, unlink previous state and link new one
             $this->unlink($this->latestStateFile());
             $this->link($current, $this->latestStateFile());
-            $this->link($this->latestStateFile(), $this->versionFile($timestamp));
         }
 
+        // #9 - unlink temp files and purge past state files
         $this->unlink($current);
         $this->unlink($diff);
         $this->purgeStateFiles();
@@ -88,6 +101,9 @@ class Synchroversion {
     Configure how many past states to retain
      */
     public function retainState($retain_state = 3) {
+        if ($retain_state < 1) {
+            throw new \Exception("Synchroversion requires at least one state file", 1);
+        }
         $this->retain_state = $retain_state;
         return $this;
     }
