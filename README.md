@@ -33,35 +33,54 @@ what I'm currently working in. Since the format is completely text file based,
 it is language agnostic and should be quite simple to implement in other
 languages as well.
 
-### producer.php
+### new Synchroversion($root, $path)
+
+Create a new instance, ready for reading or writing. The first argument is the
+root directory where all files are stored and the second is the path within
+that root you'd like to use. We'll be tracking syslog in this example, so we'll
+just name it `syslog`.
 
 ```php
-<?php
 $sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
-$sync->exec(function () {
-    return file_get_contents('/var/log/system.log');
-});
 ```
 
-You initialize it with the directory for the "root" as well as a name for your
-repository. The exec method takes a callback that should return whatever you
-want to store. Every time you run this producer, it will fetch the content and
-write a `state` file and a `latest` file if anything has changed.
+#### Synchroversion::setUmask($umask)
 
-The producer will likely be run regularly via cron or something like that. It
-could run anywhere from every minute to once a year - pick what makes sense for
-your data.
-
-### consumer.php
+This can be used to set the permissions of files and directories created. The
+default umask is `0022`, which means world-readable and user-writeable. You may
+choose to set this to `0000` if you want the permissions wide open, or `0007`
+if you want read/write for the user and group but deny permissions to others.
+Check out documentation for UNIX `umask` for more examples.
 
 ```php
-<?php
-$sync = new Synchroversion\Synchroversion(dirname(__FILE__), 'syslog');
-echo $sync->latest();
+$sync->setUmask(0007);
 ```
 
-The consumer is initialized in the same way, but only calls the `latest` method
-to fetch the latest version of the file.
+#### Synchroversion::latest()
+
+This returns the latest version of the content that has been stored.
+
+#### Synchroversion::exec(callable $cb)
+
+To write a version of the content, pass a callable which returns the data
+to be stored. A version file will be created as well as a diff if there
+are previous versions.
+
+#### Synchroversion::retainState(int $count)
+
+By default, the three latest full versions of the content are kept. This may
+be adjusted by setting this to less or more. State files are cleaned up on
+every call to exec(). If you'd like to clean up files manually by calling
+`$sync->retainState($count)` and then `$sync->purgeStateFiles()`.
+
+## Example files
+
+In this directory are two example files `producer.php` and `consumer.php` that
+illustrate both a writer and a reader which track syslog file.
+
+A producer would likely be run regularly via cron or triggered by some other
+action. It could run anywhere from every minute to once a year - pick what
+makes sense for your data.
 
 ```bash
 # Run the update every 5 seconds

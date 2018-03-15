@@ -10,7 +10,16 @@ class Synchroversion {
     protected $name;
 
     // How many state files to retain
-    protected $retain_state;
+    protected $retain_state = 3;
+
+    // The default umask for files and directories, can be configured with setUmask()
+    protected $umask = 0022;
+
+    // File mode of created files, minus umask
+    private $fmode = 0666;
+
+    // File mode of created directories, minus umask
+    private $dmode = 0777;
 
     // TODO: more logging in verbose mode, perhaps a logging callback?
     public $verbose = false;
@@ -18,13 +27,9 @@ class Synchroversion {
     /**
      * Create or connect to Synchroversion repository
      **/
-    public function __construct($directory, $name, $retain_state = 3) {
+    public function __construct($directory, $name) {
         $this->directory = $directory;
         $this->name = $name;
-        $this->retain_state = $retain_state;
-
-        $this->touchDir($this->stateDir());
-        $this->touchDir($this->versionDir());
     }
 
     /**
@@ -35,6 +40,8 @@ class Synchroversion {
      * @var $content A string or callable that produces the content you want to store
      **/
     public function exec($content) {
+        $this->touchDir($this->stateDir());
+        $this->touchDir($this->versionDir());
         $timestamp = strftime('%Y%m%d-%H%M%S');
         $current = $this->tempFile();
         $diff = $this->tempFile();
@@ -61,20 +68,38 @@ class Synchroversion {
 
         $this->unlink($current);
         $this->unlink($diff);
-
-        // Remove all but the latest version files
-        array_map(function ($f) {
-            $this->unlink($f);
-        }, array_slice($this->versionFiles(), $this->retain_state));
+        $this->purgeStateFiles();
     }
 
+    /**
+    Return the current content of the file - it's latest state
+     */
     public function latest() {
-        $f = array_shift($this->versionFiles());
+        $vfiles = $this->versionFiles();
+        $f = array_shift($vfiles);
         if ($f && is_file($f)) {
             return file_get_contents($f);
         } else {
             return '';
         }
+    }
+
+    /**
+    Configure how many past states to retain
+     */
+    public function retainState($retain_state = 3) {
+        $this->retain_state = $retain_state;
+        return $this;
+    }
+
+    public function purgeStateFiles() {
+        array_map(function ($f) {
+            $this->unlink($f);
+        }, array_slice($this->versionFiles(), $this->retain_state));
+    }
+
+    public function setUmask($umask) {
+        $this->umask = $umask;
     }
 
     private function diffCommand($state, $current, $diff) {
@@ -96,7 +121,16 @@ class Synchroversion {
         if ($this->verbose) {
             echo "Linking: $target $link\n";
         }
+        chmod($target, $this->fileMode());
         return link($target, $link);
+    }
+
+    private function fileMode() {
+        return $this->fmode & ~$this->umask;
+    }
+
+    private function dirMode() {
+        return $this->dmode & ~$this->umask;
     }
 
     private function unlink($filename) {
@@ -127,7 +161,7 @@ class Synchroversion {
     }
 
     private function touchDir($dir) {
-        is_dir($dir) || mkdir($dir, 0770, true);
+        is_dir($dir) || mkdir($dir, $this->dirMode(), true);
     }
 
     private function tempFile() {
